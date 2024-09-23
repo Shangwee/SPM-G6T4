@@ -1,0 +1,16 @@
+CREATE DATABASE IF NOT EXISTS db;
+
+USE db;
+
+CREATE TABLE Schedule (
+    Schedule_ID INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
+    Staff_ID INT NOT NULL,
+    Request_ID INT NOT NULL,
+    Date DATE NOT NULL
+);
+
+LOAD DATA INFILE '/var/lib/mysql-files/schedule.csv'
+INTO TABLE Schedule
+FIELDS TERMINATED BY ','
+LINES TERMINATED BY '\n'
+IGNORE 1 ROWS;
