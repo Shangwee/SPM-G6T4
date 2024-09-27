@@ -1,6 +1,7 @@
 version: "3.8"
 
 services:
+
   # Simple microservice
 
   #################################
@@ -10,7 +11,7 @@ services:
     build: ./Account
     image: spm/account:1.0
     restart: always
-    ports: [5001:5000]
+    ports: [ 5001:5000 ]
     depends_on:
       - account_db
     environment:
@@ -19,19 +20,20 @@ services:
       DB_PASSWORD: root
       DB_NAME: account
       DB_PORT: 3306
+      
   #################################
   # Account SQL Database
   #################################
   account_db:
     image: mysql:latest
     restart: always
-    ports: [3301:3306]
+    ports: [ 3301:3306 ]
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root 
       MYSQL_DATABASE: account
     volumes:
       - ./Account/db/account.sql:/docker-entrypoint-initdb.d/init.sql # Mount the file
-      - ./Account/employee.csv:/var/lib/mysql-files/employee.csv # Mount the file
+      - ./Account/employee.csv:/var/lib/mysql-files/employee.csv  # Mount the file
 
   #################################
   # Schedule: The Schedule microservice
@@ -57,8 +59,39 @@ services:
     restart: always
     ports: [3302:3306]
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root 
       MYSQL_DATABASE: db
     volumes:
       - ./Schedule/db/schedule.sql:/docker-entrypoint-initdb.d/init.sql # Mount the file
       - ./Schedule/schedule.csv:/var/lib/mysql-files/schedule.csv # Mount the file
+
+
+  #################################
+  # Request: The Request microservice
+  #################################
+  request:
+    build: ./Request
+    image: spm/request:1.0
+    restart: always
+    ports: [5003:5000]
+    depends_on:
+      - request_db
+    environment:
+      DB_HOST: request_db
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: db
+      DB_PORT: 3306
+  #################################
+  # Request SQL Database
+  #################################
+  request_db:
+    image: mysql:latest
+    restart: always
+    ports: [3303:3306]
+    environment:
+      MYSQL_ROOT_PASSWORD: root 
+      MYSQL_DATABASE: db
+    volumes:
+      - ./Request/db/request.sql:/docker-entrypoint-initdb.d/init.sql # Mount the file
+      - ./Request/request.csv:/var/lib/mysql-files/request.csv # Mount the file

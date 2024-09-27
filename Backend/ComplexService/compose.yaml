@@ -1,13 +1,18 @@
 version: "3.8"
 
 services:
-  # Complex microservice
+
+# Complex microservice 
 
   #################################
-  # Schedule Aggregation: The Schedule Aggregation microservice
+  # ScheduleAggregation: The ScheduleAggregation microservice
   #################################
-  schedule_aggregation:
-    build: ./ScheduleAggregationService
-    image: spm/schedule_aggregation:1.0
+  ScheduleAggregation:
+    build:
+      context: ./ScheduleAggregation
+      dockerfile: Dockerfile
+    image: spm/scheduleaggregation:1.0
     restart: always
-    ports: [5004:5000]
+    ports: ["6003:6003"]
+    environment:
+      PYTHONUNBUFFERED: 1
