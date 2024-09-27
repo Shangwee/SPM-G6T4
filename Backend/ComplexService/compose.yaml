@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  # Complex microservice
+
+  #################################
+  # Schedule Aggregation: The Schedule Aggregation microservice
+  #################################
+  schedule_aggregation:
+    build: ./ScheduleAggregationService
+    image: spm/schedule_aggregation:1.0
+    restart: always
+    ports: [5004:5000]
