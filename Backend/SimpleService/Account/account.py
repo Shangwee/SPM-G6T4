@@ -97,7 +97,7 @@ def get_user(staff_id):
         return jsonify(user), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+    
 # ** login to the system
 @app.route('/login', methods=['POST'])
 def login():
@@ -128,10 +128,29 @@ def login():
     else:
         return jsonify({'error': 'Invalid credentials'}), 401
     
+# ** retrieve all departments
+@app.route('/departments', methods=['GET'])
+def get_departments():
+    try:
+        conn = mysql.connector.connect(**db_config)
+        cursor = conn.cursor()
+        cursor.execute('SELECT DISTINCT Dept FROM Employee')
+
+        # ** Fetch all departments
+        departments = cursor.fetchall()
+
+        # ** close the cursor and connection
+        cursor.close()
+        conn.close()
+
+        return jsonify(departments), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
 # ** counting the number of users based on the query without pagination
 def get_count_by_query(query):
     conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
 
     cursor.execute(query)
 

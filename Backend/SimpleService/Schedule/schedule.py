@@ -60,6 +60,10 @@ def create_schedule():
     if not staff_id or not request_id or not date or not validate_date(date):
         return jsonify({'error': 'Please provide valid staff_id, request_id, and date (YYYY-MM-DD)'}), 400
     
+    #check if the staff_id and request_id exist in the database
+    if check_staff_request_exists(staff_id, request_id):
+        return jsonify({'error': 'Schedule already exists'}), 409
+    
     try:
         conn = mysql.connector.connect(**db_config)
         cursor = conn.cursor()
@@ -152,7 +156,7 @@ def get_department_schedule(department):
 # Function to get staff IDs by department from the accounts microservice
 def get_staff_ids_by_department(department):
     try:
-        response = requests.get(f"http://account:5000/users?dept={department}")
+        response = requests.get(f"http://host.docker.internal:5001/users?dept={department}")
         response.raise_for_status()
         users = response.json().get('users', [])
         staff_ids = [user['Staff_ID'] for user in users]
@@ -164,7 +168,7 @@ def get_staff_ids_by_department(department):
 # Function to get staff IDs by team from the accounts microservice
 def get_staff_ids_by_team(team):
     try:
-        response = requests.get(f"http://account:5000/users?Reporting_Manager={team}")
+        response = requests.get(f"http://host.docker.internal:5001/users?Reporting_Manager={team}")
         response.raise_for_status()
         users = response.json().get('users', [])
         staff_ids = [user['Staff_ID'] for user in users]
@@ -172,6 +176,19 @@ def get_staff_ids_by_team(team):
     except requests.exceptions.RequestException as e:
         print(f"Error retrieving staff IDs for team {team}: {e}")
         return None
+
+# Function to check if staff_id and request_id exist in the database
+def check_staff_request_exists(staff_id, request_id):
+    conn = mysql.connector.connect(**db_config)
+    cursor = conn.cursor()
+    cursor.execute('''SELECT * FROM Schedule WHERE Staff_ID = %s AND Request_ID = %s''', (staff_id, request_id))
     
+    result = cursor.fetchone()
+
+    cursor.close()
+    conn.close()
+
+    return result
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

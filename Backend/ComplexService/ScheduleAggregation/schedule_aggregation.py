@@ -1,5 +1,4 @@
 import requests
-import mysql.connector
 from flask import Flask, request, jsonify
 from os import environ
 from flask_cors import CORS
@@ -9,6 +8,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Microservice URL configurations
+# TODO:Change this later 
 ACCOUNTS_SERVICE_URL = "http://host.docker.internal:5001"
 SCHEDULE_SERVICE_URL = "http://host.docker.internal:5002"
 
@@ -76,6 +76,21 @@ def aggregate_schedules():
         if not validate_position(position):
             return jsonify({'error': 'Unauthorized access: Only HR or Directors can access all schedules'}), 403
         schedules = get_all_schedules(start_date, end_date)
+        # get all members from accounts microservice
+        for schedule in schedules:
+            staff_id = schedule['Staff_ID']
+            response = requests.get(f"{ACCOUNTS_SERVICE_URL}/user/{staff_id}")
+            response.raise_for_status()
+            user_data = response.json()
+            schedule['Staff_FName'] = user_data['Staff_FName']
+            schedule['Staff_LName'] = user_data['Staff_LName']
+            schedule['Dept'] = user_data['Dept']
+            schedule['Email'] = user_data['Email']
+            schedule['Position'] = user_data['Position']
+            schedule['Country'] = user_data['Country']
+            schedule['Role'] = user_data['Role']
+            schedule['Reporting_Manager'] = user_data['Reporting_Manager']
+        # combine the schedules with the members
 
     else:
         return jsonify({'error': 'Invalid schedule type'}), 400
