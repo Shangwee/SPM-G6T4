@@ -4,7 +4,7 @@ import Login  from "@/components/Login.vue";
 import OwnSchedule from "@/components/OwnSchedule.vue";
 import TeamSchedule from "@/components/TeamSchedule.vue";
 import Arrangements from "@/components/Arrangements.vue";
-import Requests from "@/components/Requests.vue";
+import Requests from "@/components/RequestsPage.vue";
 import Notifications from "@/components/Notifications.vue";
 
 
