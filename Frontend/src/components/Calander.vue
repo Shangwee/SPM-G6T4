@@ -260,7 +260,7 @@ export default {
       try {
         const params = {
           type: "Team",
-          staffId: sessionStorage.getItem('staffID'),
+          // staffId: sessionStorage.getItem('staffID'),
           Reporting_Manager: this.reportingManager,
           start_date: `${this.currentYear}-${this.currentMonth + 1}-${this.selectedDay || this.currentDate.getDate()}`,
           end_date: `${this.currentYear}-${this.currentMonth + 1}-${this.selectedDay || this.currentDate.getDate()}`,
