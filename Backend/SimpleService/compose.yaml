@@ -1,46 +1,70 @@
 version: "3.8"
 
 services:
-
   # Simple microservice
 
-  #################################
-  # Account: The Account microservice
-  #################################
-  account:
-    build: ./Account
-    image: spm/account:1.0
-    restart: always
-    ports: [ 5001:5000 ]
-    depends_on:
-      - account_db
-    environment:
-      DB_HOST: account_db
-      DB_USER: root
-      DB_PASSWORD: root
-      DB_NAME: account
-      DB_PORT: 3306
-      
   #################################
   # Account SQL Database
   #################################
   account_db:
     image: mysql:latest
     restart: always
-    ports: [ 3301:3306 ]
+    ports: [3301:3306]
     environment:
-      MYSQL_ROOT_PASSWORD: root 
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: account
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - ./Account/db/account.sql:/docker-entrypoint-initdb.d/init.sql # Mount the file
-      - ./Account/employee.csv:/var/lib/mysql-files/employee.csv  # Mount the file
+      - ./Account/employee.csv:/var/lib/mysql-files/employee.csv # Mount the file
+
+  #################################
+  # Account: The Account microservice
+  #################################
+  account:
+    build: ./Account
+    image: gcr.io/spmprojecttest/account:1.0  # Updated for GCR
+    restart: always
+    ports: [5001:5001]
+    depends_on:
+      account_db:
+        condition: service_healthy
+    environment:
+      DB_HOST: account_db
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: account
+      DB_PORT: 3306
+
+  #################################
+  # Account test: testing the Account microservice
+  #################################
+  account_test:
+    build: ./Account
+    image: gcr.io/spmprojecttest/account_test:1.0  # Updated for GCR
+    depends_on:
+      account_db:
+        condition: service_healthy
+      account:
+        condition: service_started
+    environment:
+      DB_HOST: account_db
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: account
+      DB_PORT: 3306
+    command: /bin/sh -c "sleep 20 && python -m unittest account_test.py"
 
   #################################
   # Schedule: The Schedule microservice
   #################################
   schedule:
     build: ./Schedule
-    image: spm/schedule:1.0
+    image: gcr.io/spmprojecttest/schedule:1.0  # Updated for GCR
     restart: always
     ports: [5002:5000]
     depends_on:
@@ -51,6 +75,7 @@ services:
       DB_PASSWORD: root
       DB_NAME: db
       DB_PORT: 3306
+
   #################################
   # Schedule SQL Database
   #################################
@@ -59,29 +84,30 @@ services:
     restart: always
     ports: [3302:3306]
     environment:
-      MYSQL_ROOT_PASSWORD: root 
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: db
     volumes:
       - ./Schedule/db/schedule.sql:/docker-entrypoint-initdb.d/init.sql # Mount the file
       - ./Schedule/schedule.csv:/var/lib/mysql-files/schedule.csv # Mount the file
-
 
   #################################
   # Request: The Request microservice
   #################################
   request:
     build: ./Request
-    image: spm/request:1.0
+    image: gcr.io/spmprojecttest/request:1.0  # Updated for GCR
     restart: always
     ports: [5003:5000]
     depends_on:
-      - request_db
+      request_db:
+        condition: service_healthy
     environment:
       DB_HOST: request_db
       DB_USER: root
       DB_PASSWORD: root
       DB_NAME: db
       DB_PORT: 3306
+
   #################################
   # Request SQL Database
   #################################
@@ -90,8 +116,32 @@ services:
     restart: always
     ports: [3303:3306]
     environment:
-      MYSQL_ROOT_PASSWORD: root 
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: db
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     volumes:
       - ./Request/db/request.sql:/docker-entrypoint-initdb.d/init.sql # Mount the file
       - ./Request/request.csv:/var/lib/mysql-files/request.csv # Mount the file
+
+  #################################
+  # Request test: testing the Request microservice
+  #################################
+  request_test:
+    build: ./Request
+    image: gcr.io/spmprojecttest/request_test:1.0  # Updated for GCR
+    depends_on:
+      request_db:
+        condition: service_healthy
+      request:
+        condition: service_started
+    environment:
+      DB_HOST: request_db
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_NAME: db
+      DB_PORT: 3306
+    command: /bin/sh -c "sleep 20 && python -m unittest request_test.py"
