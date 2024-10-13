@@ -2,7 +2,57 @@ version: "3.8"
 
 services:
 
-# Complex microservice 
+  # Complex microservice 
+
+  #################################
+  # FlexibleArrangement: The FlexibleArrangement microservice
+  #################################
+  FlexibleArrangement:
+    build:
+      context: ./FlexibleArrangement
+      dockerfile: Dockerfile
+    image: gcr.io/spmprojecttest/flexiblearrangement:1.0  # Updated for GCR
+    restart: always
+    ports: ["6001:6001"]
+    environment:
+      PYTHONUNBUFFERED: 1
+
+  #################################
+  # FlexibleArrangement test: testing the FlexibleArrangement microservice
+  #################################
+  FlexibleArrangement_test:
+    build:
+      context: ./FlexibleArrangement
+      dockerfile: Dockerfile
+    image: spm/flexiblearrangement_test:1.0
+    depends_on:
+      - FlexibleArrangement
+    command: /bin/sh -c "sleep 10 && python -m unittest flexible_arrangement_test.py"
+
+  #################################
+  # ManageRequest: The ManageRequest microservice
+  #################################
+  ManageRequest:
+    build:
+      context: ./ManageRequest
+      dockerfile: Dockerfile
+    image: gcr.io/spmprojecttest/managerequest:1.0  # Updated for GCR
+    restart: always
+    ports: ["6002:6002"]
+    environment:
+      PYTHONUNBUFFERED: 1 
+
+  #################################
+  # ManageRequest test: testing the ManageRequest microservice
+  #################################
+  ManageRequest_test:
+    build:
+      context: ./ManageRequest
+      dockerfile: Dockerfile
+    image: gcr.io/spmprojecttest/managerequest_test:1.0  # Updated for GCR
+    depends_on:
+      - ManageRequest
+    command: /bin/sh -c "sleep 20 && python -m unittest manage_request_test.py"
 
   #################################
   # ScheduleAggregation: The ScheduleAggregation microservice
@@ -11,7 +61,7 @@ services:
     build:
       context: ./ScheduleAggregation
       dockerfile: Dockerfile
-    image: spm/scheduleaggregation:1.0
+    image: gcr.io/spmprojecttest/scheduleaggregation:1.0  # Updated for GCR
     restart: always
     ports: ["6003:6003"]
     environment:
