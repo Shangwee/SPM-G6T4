@@ -71,7 +71,6 @@ def create_app():
 
                 approver_id = retrieve_request['Approver_ID']
 
-
                 # check if the user is allowed to accept the request
                 if approver_id != staff_id:
                     return jsonify({'error': 'You are not allowed to accept this request'}), 401
@@ -98,6 +97,47 @@ def create_app():
                 return jsonify({'error': 'Failed to retrieve the request'}), 500
         # if the user is not allowed to accept the request
         return jsonify({'error': 'You are not allowed to accept this request'}), 401
+    
+    @app.route('/manageRequest/withdraw', methods=['POST'])
+    def withdraw():
+        # get the staff_id and request_id from the request
+        data = request.get_json()
+        staff_id = data['staff_id']
+        request_id = data['request_id']
+
+        # check if the user is allowed to accept the request
+        role = check_staff_role(staff_id)
+        if role == 1 or role == 3:
+            # retrieve the request from the request service
+            retrieve_request = requests.get(f"{REQUEST_SERVICE_URL}/request/{request_id}")
+
+            if retrieve_request.status_code == 200:
+                retrieve_data = retrieve_request.json()
+                approver_id = retrieve_data['Approver_ID']
+                status = retrieve_data['Status']
+
+                # check if the user is allowed to withdraw the request
+                if approver_id == staff_id:
+                    if status == 1:
+                        # update status to rejected
+                        update_status = requests.put(f"{REQUEST_SERVICE_URL}/request/update/{request_id}?Status=2")
+                        if update_status.status_code == 200:
+                            # delete the request from the schedule
+                            delete_schedule = requests.delete(f"{SCHEDULE_SERVICE_URL}/schedule/delete/request/{request_id}")
+                            if delete_schedule.status_code == 200:
+                                return jsonify({'message': 'Request withdrawn successfully'}), 200
+                            else:
+                                return jsonify({'error': 'Failed to withdraw the request'}), 500
+                        else:
+                            return jsonify({'error': 'Failed to withdraw the request'}), 500
+                    else:
+                        return jsonify({'error': 'You are not allowed to withdraw this request'}), 401
+                else:
+                    return jsonify({'error': 'You are not allowed to withdraw this request'}), 401
+            else:
+                return jsonify({'error': 'Failed to retrieve the request'}), 500
+        else:
+            return jsonify({'error': 'You are not allowed to withdraw this request'}), 401
 
     def check_staff_role(staff_id):
         Employee = requests.get(f"{ACCOUNTS_SERVICE_URL}/user/{staff_id}")

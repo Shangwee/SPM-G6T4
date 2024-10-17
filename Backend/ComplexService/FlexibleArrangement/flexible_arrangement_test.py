@@ -89,5 +89,5 @@ class TestFlexibleArrangementAPI(flask_testing.TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_withdraw_request(self):
-        response = self.client.delete('/flexibleArrangement/withdrawRequest', json={"staff_id": 151547, "request_id": 18})
+        response = self.client.delete('/flexibleArrangement/withdrawRequest', json={"staff_id": 151547, "request_id": 19})
         self.assertEqual(response.status_code, 200)
