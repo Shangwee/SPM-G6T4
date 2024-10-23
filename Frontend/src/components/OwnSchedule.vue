@@ -256,39 +256,46 @@ const changeWfhDate = async () => {
     return;
   }
 
-  // Get the request ID (you should already have this from the WFH request that the user is trying to edit)
+  // Get the request ID and the original requested date
   const requestId = dayToWithdraw.value; // Assuming you have requestId stored here
+
+  // Find the initial WFH requested date for the current request
+  const initialRequest = wfhDates.value.find(wfh => wfh.request_id === requestId);
+  const initialDate = initialRequest ? initialRequest.date : null;
+
+  if (!initialDate) {
+    alert('Error: Unable to retrieve initial WFH request date.');
+    return;
+  }
 
   let isValidDate = false;
   let newDate = null;
 
-  // Keep asking for a valid date until the user enters a correct one
+  // Keep asking for a valid and different date until the user enters a correct one or cancels
   while (!isValidDate) {
     newDate = prompt('Enter a new date for WFH (YYYY-MM-DD):');
-    
-    // Check if the input is in the right format (YYYY-MM-DD)
+
+    if (!newDate) {
+      // If the user presses "Cancel", close the popup
+      showOptionsPopup.value = false;
+      return;
+    }
+
     const dateRegex = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 
-    if (!newDate || !dateRegex.test(newDate)) {
+    if (!dateRegex.test(newDate)) {
       alert('Invalid date format! Please enter a valid date in YYYY-MM-DD format (with correct month and day).');
+    } else if (newDate === initialDate) {
+      alert('The new date cannot be the same as the original requested date. Please choose a different date.');
     } else {
-      // Check if the date is valid by trying to parse it and verifying that the month and day are within range
       const dateInput = new Date(newDate);
-      const inputYear = dateInput.getFullYear();
-      const inputMonth = dateInput.getMonth() + 1; // getMonth() returns 0-indexed months, so add 1
-      const inputDay = dateInput.getDate();
+      const currentDate = new Date();
 
-      // Verify that the entered date actually exists in the calendar
-      if (inputYear > 9999 || isNaN(dateInput.getTime()) || newDate !== `${inputYear}-${String(inputMonth).padStart(2, '0')}-${String(inputDay).padStart(2, '0')}`) {
-        alert('Invalid date! Please ensure the month and day are within the correct range.');
+      // Check if the date is at least 24 hours in the future
+      if (dateInput.getTime() - currentDate.getTime() < 24 * 60 * 60 * 1000) {
+        alert('Date must be at least 24 hours from now. Please enter a valid future date.');
       } else {
-        // Check if the date is at least 24 hours from now (backend validation)
-        const currentDate = new Date();
-        if (dateInput.getTime() - currentDate.getTime() < 24 * 60 * 60 * 1000) {
-          alert('Date must be at least 24 hours from now. Please enter a valid future date.');
-        } else {
-          isValidDate = true;  // Mark the date as valid if all checks pass
-        }
+        isValidDate = true;  // Mark the date as valid if all checks pass and it's different from the original date
       }
     }
   }
@@ -305,10 +312,10 @@ const changeWfhDate = async () => {
   try {
     // Send the PUT request to the backend to update the WFH request
     const response = await axios.put('http://localhost:6001/flexibleArrangement/updateRequest', {
-      staff_id: staffId,  // The staff ID stored in session
-      request_id: requestId,  // The request ID you're updating
-      date: newDate,  // New date provided by the user
-      reason: newReason  // New reason provided by the user
+      staff_id: staffId,
+      request_id: requestId,
+      date: newDate,
+      reason: newReason
     });
 
     if (response.status === 200) {
@@ -321,9 +328,10 @@ const changeWfhDate = async () => {
     console.error('Error updating WFH request:', error.response ? error.response.data : error.message);
     alert('Error: Unable to update WFH request.');
   } finally {
-    showOptionsPopup.value = false;
+    showOptionsPopup.value = false;  // Close the options popup after successful submission
   }
 };
+
 
 
 const closePopup = () => {
